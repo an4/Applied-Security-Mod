@@ -1,5 +1,11 @@
 #include "modmul.h"
 
+// Read value of variable in hex.
+void initialize_and_read(mpz_t variable) {
+	mpz_init(variable);
+	gmp_scanf( "%Zx" , variable);
+}
+
 /*
 Perform stage 1:
 
@@ -13,25 +19,28 @@ void stage1() {
   	// fill in this function with solution
 	mpz_t N, e, m, c;
 
+	// mpz_init( N );
+	// gmp_scanf( "%Zx",  N );
+
+	initialize_and_read(N);
+
 	while(!feof(stdin)) {
 
-	mpz_init( N );
-	mpz_init( e );
-	mpz_init( m );
-	mpz_init( c );
+	initialize_and_read(e);
+	initialize_and_read(m);
 
-	gmp_scanf( "%Zs",  N );
-  	gmp_scanf( "%Zs",  e );
-  	gmp_scanf( "%Zs",  m );
-
+  	mpz_init( c );
   	mpz_powm(c, m, e, N);
 
-  	gmp_printf( "%Zd\n", c );
+	
+  	gmp_printf( "%Zx\n", c );
 
   	mpz_clear( N );
   	mpz_clear( e );
   	mpz_clear( m );
   	mpz_clear( c );
+
+  	initialize_and_read(N);
 
   	}
 }
