@@ -36,12 +36,12 @@ void sliding_window_exponentiation(mpz_t output, mpz_t base, mpz_t exp, mpz_t mo
 	mpz_init(temp);
 	mpz_init(square_base);
 
-	// Compute lookup table.
 	// T[0] = x
 	mpz_init_set(table[0], base);
-	// x^2
+	// x^2 mod N
 	mpz_mul(square_base, base, base);
 	mpz_mod(square_base, square_base, modulus);
+	// Compute lookup table.
 	for(i = 1; i < table_length; i++) {
 		mpz_init(table[i]);
 		mpz_mul(table[i], table[i-1], square_base);
@@ -81,6 +81,7 @@ void sliding_window_exponentiation(mpz_t output, mpz_t base, mpz_t exp, mpz_t mo
 		}
 		i = l - 1;
 	}
+
 	mpz_clear(square_base);
 	mpz_clear(temp);
 	for(i=0 ; i<table_length; i++) {
@@ -97,7 +98,6 @@ Perform stage 1:
 */
 
 void stage1() {
-
   	// fill in this function with solution
 	mpz_t N, e, m, c;
 
@@ -120,7 +120,6 @@ void stage1() {
 		mpz_clear( c );
 
 		initialize_and_read(N);
-
   	}
 }
 
@@ -133,14 +132,12 @@ Perform stage 2:
 */
 
 void stage2() {
-
 	// fill in this function with solution
 	mpz_t N, d, p, q, d_p, d_q, i_p, i_q, c, m;
 
 	initialize_and_read(N);
 
 	while(!feof(stdin)) {
-
 		initialize_and_read(d);
 		initialize_and_read(p);
 		initialize_and_read(q);
@@ -193,7 +190,6 @@ void stage2() {
 
 		initialize_and_read(N);
 	}
-
 }
 
 /*
