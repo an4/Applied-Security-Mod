@@ -1,9 +1,105 @@
 #include "modmul.h"
 
+#define WINDOW_SIZE 4
+
 // Read value of variable in hex.
 void initialize_and_read(mpz_t variable) {
 	mpz_init(variable);
 	gmp_scanf( "%Zx" , variable);
+}
+
+int binary_to_decimal(mpz_t input, int start, int end) {
+	int i;
+	int result = 0;
+	int g = 1;
+	for(i = end; i<=start; i++) {
+		int bit = mpz_tstbit(input, i);
+		if(bit) {
+			result += g * bit;
+		}
+		g *= 2;
+	}
+	return result;
+}
+
+int get_bit(mpz_t input, int index) {
+	mpz_t result;
+	mpz_t bit,two;
+	mpz_init_set_ui(result,0);
+	mpz_init_set_ui(two,2);
+	mpz_init(bit);
+	mpz_setbit(result, index);
+	mpz_div(result, input, result);
+	mpz_mod(bit, result, two);
+	return mpz_cmp_ui(bit, 0);
+}
+
+void sliding_window_exponentiation(mpz_t output, mpz_t base, mpz_t exp, mpz_t modulus) {
+	const int table_length = 1 << (WINDOW_SIZE - 1);
+	mpz_t table[table_length];
+	mpz_t square_base;
+	mpz_t temp;
+	int i;
+	int exp_length;
+	int last;
+	// value in window 
+	int u;
+
+	// Compute lookup table.
+	mpz_init_set(table[0], base);
+
+	mpz_init(square_base);
+	mpz_mul(square_base, base, base);
+	mpz_mod(square_base, square_base, modulus);
+
+	mpz_init(temp);
+
+	for(i = 1; i < table_length; i++) {
+		mpz_init(table[i]);
+		mpz_mul(table[i], table[i-1], square_base);
+		mpz_mod(table[i], table[i], modulus);
+	}
+
+	mpz_set_ui(output, 1);
+
+	exp_length = mpz_size(exp) * mp_bits_per_limb;
+	i = exp_length - 1;
+
+	while(i >= 0) {
+		if(!mpz_tstbit(exp, i)) {
+			last = i;
+			u = 0;
+		} else {
+			last = ((i - WINDOW_SIZE + 1) > 0) ? (i - WINDOW_SIZE + 1) : 0;
+
+			while(!mpz_tstbit(exp,last)) {
+				last++;
+			}
+
+			// Set u = exp bits between i and last;
+			u = binary_to_decimal(exp, i, last);
+		}
+		
+		int power = 1 << (i - last + 1);
+		mpz_set(temp, output);
+
+		if(power>0) {
+			mpz_powm_ui(output, temp, power, modulus);
+		}
+
+		if(u != 0) {
+			mpz_mul(output, output, table[(u-1)/2]);
+			mpz_mod(output, output, modulus);
+		}
+
+		i = last - 1;
+	}
+
+	mpz_clear(square_base);
+	mpz_clear(temp);
+	for(i=0 ; i<table_length; i++) {
+		mpz_clear(table[i]);
+	}
 }
 
 /*
@@ -19,9 +115,6 @@ void stage1() {
   	// fill in this function with solution
 	mpz_t N, e, m, c;
 
-	// mpz_init( N );
-	// gmp_scanf( "%Zx",  N );
-
 	initialize_and_read(N);
 
 	while(!feof(stdin)) {
@@ -31,7 +124,7 @@ void stage1() {
 
 		mpz_init( c );
 
-		mpz_powm(c, m, e, N);
+		sliding_window_exponentiation(c, m, e, N);
 
 		gmp_printf( "%Zx\n", c );
 
