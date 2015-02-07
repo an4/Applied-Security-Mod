@@ -22,18 +22,6 @@ int binary_to_decimal(mpz_t input, int start, int end) {
 	return result;
 }
 
-int get_bit(mpz_t input, int index) {
-	mpz_t result;
-	mpz_t bit,two;
-	mpz_init_set_ui(result,0);
-	mpz_init_set_ui(two,2);
-	mpz_init(bit);
-	mpz_setbit(result, index);
-	mpz_div(result, input, result);
-	mpz_mod(bit, result, two);
-	return mpz_cmp_ui(bit, 0);
-}
-
 void sliding_window_exponentiation(mpz_t output, mpz_t base, mpz_t exp, mpz_t modulus) {
 	const int table_length = 1 << (WINDOW_SIZE - 1);
 	mpz_t table[table_length];
