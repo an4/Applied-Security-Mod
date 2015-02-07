@@ -29,60 +29,58 @@ void sliding_window_exponentiation(mpz_t output, mpz_t base, mpz_t exp, mpz_t mo
 	mpz_t temp;
 	int i;
 	int exp_length;
-	int last;
+	int l;
 	// value in window 
 	int u;
 
-	// Compute lookup table.
-	mpz_init_set(table[0], base);
-
+	mpz_init(temp);
 	mpz_init(square_base);
+
+	// Compute lookup table.
+	// T[0] = x
+	mpz_init_set(table[0], base);
+	// x^2
 	mpz_mul(square_base, base, base);
 	mpz_mod(square_base, square_base, modulus);
-
-	mpz_init(temp);
-
 	for(i = 1; i < table_length; i++) {
 		mpz_init(table[i]);
 		mpz_mul(table[i], table[i-1], square_base);
 		mpz_mod(table[i], table[i], modulus);
 	}
-
+	// t = 1
 	mpz_set_ui(output, 1);
-
+	// |y|
 	exp_length = mpz_size(exp) * mp_bits_per_limb;
+	// |y| - 1
 	i = exp_length - 1;
-
 	while(i >= 0) {
 		if(!mpz_tstbit(exp, i)) {
-			last = i;
+			l = i;
 			u = 0;
 		} else {
-			last = ((i - WINDOW_SIZE + 1) > 0) ? (i - WINDOW_SIZE + 1) : 0;
-
-			while(!mpz_tstbit(exp,last)) {
-				last++;
+			l = ((i - WINDOW_SIZE + 1) > 0) ? (i - WINDOW_SIZE + 1) : 0;
+			while(!mpz_tstbit(exp,l)) {
+				l++;
 			}
-
-			// Set u = exp bits between i and last;
-			u = binary_to_decimal(exp, i, last);
-		}
-		
-		int power = 1 << (i - last + 1);
-		mpz_set(temp, output);
-
-		if(power>0) {
-			mpz_powm_ui(output, temp, power, modulus);
+			// Set u = exp bits between i and l
+			u = binary_to_decimal(exp, i, l);
 		}
 
+		// t' = t
+		mpz_set(temp, output);		
+		// t^p
+		int p = 1 << (i - l + 1);
+		if(p>0) {
+			// t = t'^p (mod N)
+			mpz_powm_ui(output, temp, p, modulus);
+		}
 		if(u != 0) {
+			// t = t * T[(u-1)/2] mod N
 			mpz_mul(output, output, table[(u-1)/2]);
 			mpz_mod(output, output, modulus);
 		}
-
-		i = last - 1;
+		i = l - 1;
 	}
-
 	mpz_clear(square_base);
 	mpz_clear(temp);
 	for(i=0 ; i<table_length; i++) {
@@ -154,7 +152,30 @@ void stage2() {
 
 		mpz_init(m);
 
-		mpz_powm(m, c, d, N);
+		// mpz_powm(m, c, d, N);
+
+		// CRT modular exponentiation
+
+		mpz_t m_p;
+		mpz_t m_q;
+		mpz_init(m_p);
+		mpz_init(m_q);
+
+		mpz_powm(m_p, c, d_p, p);
+		mpz_powm(m_q, c, d_q, q);
+
+		mpz_mul(m_p, m_p, q);
+		mpz_mod(m_p, m_p, N);
+		mpz_mul(m_p, m_p, i_q);
+		mpz_mod(m_p, m_p, N);
+
+		mpz_mul(m_q, m_q, p);
+		mpz_mod(m_q, m_q, N);
+		mpz_mul(m_q, m_q, i_p);
+		mpz_mod(m_q, m_q, N);		
+
+		mpz_add(m, m_p, m_q);
+		mpz_mod(m, m, N);
 
 		gmp_printf( "%Zx\n", m );
 
@@ -167,6 +188,8 @@ void stage2() {
 		mpz_clear(i_p);
 		mpz_clear(i_q);
 		mpz_clear(c);
+		mpz_clear(m_p);
+		mpz_clear(m_q);
 
 		initialize_and_read(N);
 	}
