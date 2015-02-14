@@ -53,7 +53,7 @@ the style or efficiency of a solution.
 [?]           - sound approach to pseudo-random generation           ( 10%)
 [X]           - Chinese Remainder Theorem (CRT)                      ( 10%)
 [X]           - Non-binary (i.e., "windowed") exponentiation         ( 15%)
-[?]           - applied Montgomery multiplication in exponentiation  ( 25%)
+[X]           - applied Montgomery multiplication in exponentiation  ( 25%)
 
 
                                                                      ------

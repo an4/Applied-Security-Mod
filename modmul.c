@@ -544,8 +544,35 @@ void Test_montgomery() {
     mpz_clear(Mx);
 }
 
+void Test_exponentiation() {
+    mpz_t base;
+    mpz_t exp;
+    mpz_t N;
+    mpz_t result;
+    mpz_t result_test;
+
+    initialize_and_read(base);
+    initialize_and_read(exp);
+    initialize_and_read(N);
+
+    // Modular exponentiation
+    mpz_init(result_test);
+    mpz_powm(result_test, base, exp, N);
+
+    // Sliding window modular exponentiation
+    sliding_window_exponentiation(result, base, exp, N);
+
+    assert(mpz_cmp(result, result_test) == 0);
+
+    mpz_clear(base);
+    mpz_clear(exp);
+    mpz_clear(N);
+    mpz_clear(result);
+}
+
 void Test() {
     Test_montgomery();
+    Test_exponentiation();
 }
 
 /** END TEST */
