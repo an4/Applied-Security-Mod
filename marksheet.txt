@@ -41,18 +41,18 @@ For example, other elements outside this list *often* warrant an increase
 or decrease in marks; examples include hard to quantify features such as
 the style or efficiency of a solution.
 
-[?] Stage 1 : implemented RSA     encryption                         ( 10%)
+[X] Stage 1 : implemented RSA     encryption                         ( 10%)
 
-[?] Stage 2 : implemented RSA     decryption                         ( 10%)
+[X] Stage 2 : implemented RSA     decryption                         ( 10%)
 
-[?] Stage 3 : implemented ElGamal encryption                         ( 10%)
+[X] Stage 3 : implemented ElGamal encryption                         ( 10%)
 
-[?] Stage 4 : implemented ElGamal decryption                         ( 10%)
+[X] Stage 4 : implemented ElGamal decryption                         ( 10%)
 
     Extra   : implemented (and integrated) major optimisations
 [?]           - sound approach to pseudo-random generation           ( 10%)
-[?]           - Chinese Remainder Theorem (CRT)                      ( 10%)
-[?]           - Non-binary (i.e., "windowed") exponentiation         ( 15%)
+[X]           - Chinese Remainder Theorem (CRT)                      ( 10%)
+[X]           - Non-binary (i.e., "windowed") exponentiation         ( 15%)
 [?]           - applied Montgomery multiplication in exponentiation  ( 25%)
 
 
