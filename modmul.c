@@ -10,6 +10,7 @@ void initialize_and_read(mpz_t variable) {
     gmp_scanf( "%Zx" , variable);
 }
 
+/** Sliding Window Exponentiation */
 int binary_to_decimal(mpz_t input, int start, int end) {
     int i;
     int result = 0;
@@ -227,6 +228,28 @@ void montgomery(mpz_t output, mpz_t x, mpz_t y, mpz_t N) {
     mpz_clear(BASE);
 }
 
+/** Random */
+
+int rdrand64(long long* r) {
+    unsigned char success;
+
+    asm("rdrand %0; setc %1"
+        : "=r" (*r), "=qm" (success));
+
+    return success;
+}
+
+int rdrand64_retry(long long* r, int l) {
+    int i = 0;
+
+    do {
+        if(rdrand64(r) && r>0) {
+            return 1;
+        }
+    } while(i++ < l);
+
+    return 0;
+}
 
 /*
 Perform stage 1:
@@ -368,15 +391,19 @@ void stage3() {
         mpz_init(k);
 
         // TO DO: add random
-        int i_k = 1;
-        mpz_set_ui(k, i_k);
+        long long* rand = NULL;
+        rdrand64_retry(rand, 10);
 
+        printf("%lld\n", *rand);
+
+        mpz_set_ui(k, 1);
         mpz_mod(k, k, q);
 
         // mpz_powm(c1, g, k, p);
         sliding_window_exponentiation(c1, g, k, p);
 
-        mpz_pow_ui(h, h, i_k);
+        //mpz_powm(h, h, k, p);
+        sliding_window_exponentiation(h, h, k, p);
 
         // mpz_mul(c2, m, h);
         // mpz_mod(c2, c2, p);
