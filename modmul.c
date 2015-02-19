@@ -230,25 +230,24 @@ void montgomery(mpz_t output, mpz_t x, mpz_t y, mpz_t N) {
 
 /** Random */
 
-int rdrand64(long long* r) {
-    unsigned char success;
+void getSeed(gmp_randstate_t state) {
+    // get value from /dev/urandom
+    unsigned long long data[4];
+    FILE* file;
+    file = fopen("/dev/urandom", "r");
+    int i;
+    fread(&data, 4, sizeof(unsigned long long), file);
+    fclose(file);
 
-    asm("rdrand %0; setc %1"
-        : "=r" (*r), "=qm" (success));
+    // assign seed
+    mpz_t seed;
+    mpz_init(seed);
+    mpz_import(seed, 4, 1, sizeof(data[0]), 0, 0, data);
 
-    return success;
-}
+    gmp_printf("S: %Zx\n", seed);
 
-int rdrand64_retry(long long* r, int l) {
-    int i = 0;
-
-    do {
-        if(rdrand64(r) && r>0) {
-            return 1;
-        }
-    } while(i++ < l);
-
-    return 0;
+    // seed
+    gmp_randseed(state, seed);
 }
 
 /*
@@ -375,6 +374,12 @@ void stage3() {
     // fill in this function with solution
     mpz_t p, q, g, h, m, c1, c2, k;
 
+    // State
+    gmp_randstate_t state;
+    gmp_randinit_default(state);
+
+    getSeed(state);
+
     while(!feof(stdin)) {
         initialize_and_read(p);
         initialize_and_read(q);
@@ -389,15 +394,14 @@ void stage3() {
         mpz_init(c1);
         mpz_init(c2);
         mpz_init(k);
+        mpz_set_ui(k, 0);
 
-        // TO DO: add random
-        long long* rand = NULL;
-        rdrand64_retry(rand, 10);
+        // Random
+        while(mpz_cmp_ui(k, 0) == 0){
+            mpz_urandomm(k, state, q);
+        }
 
-        printf("%lld\n", *rand);
-
-        mpz_set_ui(k, 1);
-        mpz_mod(k, k, q);
+        gmp_printf("Random k: %Zx\n", k);
 
         // mpz_powm(c1, g, k, p);
         sliding_window_exponentiation(c1, g, k, p);
