@@ -232,14 +232,14 @@ void montgomery(mpz_t output, mpz_t x, mpz_t y, mpz_t N) {
 
 void getSeed(gmp_randstate_t state) {
     // get value from /dev/urandom
-    unsigned long long data[4];
+    unsigned int data[40];
     FILE* file;
     file = fopen("/dev/random", "r");
 
-    int b = fread(&data, 4, sizeof(unsigned long long), file);
+    int b = fread(&data, 40, sizeof(unsigned int), file);
     fclose(file);
 
-    if(b != sizeof(unsigned long long)) {
+    if(b != sizeof(unsigned int)) {
         fputs ("Reading error",stderr);
         exit (3);
     }
@@ -247,13 +247,13 @@ void getSeed(gmp_randstate_t state) {
     // assign seed
     mpz_t seed;
     mpz_init(seed);
-    mpz_import(seed, 4, 1, sizeof(data[0]), 0, 0, data);
+    mpz_import(seed, 40, 1, sizeof(data[0]), 0, 0, data);
 
     // seed
     gmp_randseed(state, seed);
 }
 
-/** CRT */
+/** CRT using montgomery and sliding window exponentiation */
 void CRT(mpz_t c,
          mpz_t i_q,
          mpz_t i_p,
@@ -270,25 +270,16 @@ void CRT(mpz_t c,
      mpz_init(m_p);
      mpz_init(m_q);
 
-     // mpz_powm(m_p, c, d_p, p);
      sliding_window_exponentiation(m_p, c, d_p, p);
-     // mpz_powm(m_q, c, d_q, q);
+
      sliding_window_exponentiation(m_q, c, d_q, q);
 
-     // mpz_mul(m_p, m_p, q);
-     // mpz_mod(m_p, m_p, N);
      montgomery(m_p, m_p, q, N);
 
-     // mpz_mul(m_p, m_p, i_q);
-     // mpz_mod(m_p, m_p, N);
      montgomery(m_p, m_p, i_q, N);
 
-     // mpz_mul(m_q, m_q, p);
-     // mpz_mod(m_q, m_q, N);
      montgomery(m_q, m_q, p, N);
 
-     // mpz_mul(m_q, m_q, i_p);
-     // mpz_mod(m_q, m_q, N);
      montgomery(m_q, m_q, i_p, N);
 
      mpz_add(m, m_p, m_q);
@@ -297,6 +288,45 @@ void CRT(mpz_t c,
      mpz_clear(m_p);
      mpz_clear(m_q);
 }
+
+void CRT_first(mpz_t c,
+               mpz_t i_q,
+               mpz_t i_p,
+               mpz_t d_q,
+               mpz_t d_p,
+               mpz_t q,
+               mpz_t p,
+               mpz_t d,
+               mpz_t N,
+               mpz_t m) {
+
+     mpz_t m_p;
+     mpz_t m_q;
+     mpz_init(m_p);
+     mpz_init(m_q);
+
+     mpz_powm(m_p, c, d_p, p);
+     mpz_powm(m_q, c, d_q, q);
+
+     mpz_mul(m_p, m_p, q);
+     mpz_mod(m_p, m_p, N);
+
+     mpz_mul(m_p, m_p, i_q);
+     mpz_mod(m_p, m_p, N);
+
+     mpz_mul(m_q, m_q, p);
+     mpz_mod(m_q, m_q, N);
+
+     mpz_mul(m_q, m_q, i_p);
+     mpz_mod(m_q, m_q, N);
+
+     mpz_add(m, m_p, m_q);
+     mpz_mod(m, m, N);
+
+     mpz_clear(m_p);
+     mpz_clear(m_q);
+}
+
 
 /*
 Perform stage 1:
@@ -618,9 +648,58 @@ void Test_exponentiation() {
     mpz_clear(result);
 }
 
+void Test_ElGamal() {
+    mpz_t p,q,g,x,m,h,nx,c1,c2,k,m1;
+
+    initialize_and_read(p);
+    initialize_and_read(q);
+    initialize_and_read(g);
+    initialize_and_read(x);
+    initialize_and_read(m);
+
+    // compute h
+    mpz_init(h);
+    mpz_powm(h, g, x, p);
+
+    gmp_randstate_t state;
+    gmp_randinit_default(state);
+
+    getSeed(state);
+
+    // encrypt
+
+    mpz_init(c1);
+    mpz_init(c2);
+    mpz_init(k);
+    mpz_set_ui(k, 0);
+    // Random
+    while(mpz_cmp_ui(k, 0) == 0){
+        mpz_urandomm(k, state, q);
+    }
+
+    sliding_window_exponentiation(c1, g, k, p);
+    sliding_window_exponentiation(h, h, k, p);
+    montgomery(c2, m, h, p);
+
+    // decrypt
+
+    mpz_init(m1);
+    // -x (mod q)
+    mpz_init(nx);
+    mpz_mod(nx, x, q);
+    mpz_neg(nx, nx);
+    mpz_add(nx, nx, q);
+
+    sliding_window_exponentiation(c1, c1, nx, p);
+    montgomery(m1, c1, c2, p);
+
+    assert(mpz_cmp(m1, m) == 0);
+}
+
 void Test() {
     Test_montgomery();
     Test_exponentiation();
+    Test_ElGamal();
 }
 
 /** END TEST */
