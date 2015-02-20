@@ -51,7 +51,7 @@ void sliding_window_exponentiation(mpz_t output, mpz_t base, mpz_t exp, mpz_t mo
         mpz_mod(table[i], table[i], modulus);
     }
     // t = 1
-    mpz_set_ui(output, 1);
+    mpz_init_set_ui(output, 1);
     // |y|
     exp_length = mpz_size(exp) * mp_bits_per_limb;
     // |y| - 1
@@ -638,6 +638,7 @@ void Test_exponentiation() {
     mpz_powm(result_test, base, exp, N);
 
     // Sliding window modular exponentiation
+    mpz_init(result);
     sliding_window_exponentiation(result, base, exp, N);
 
     assert(mpz_cmp(result, result_test) == 0);
