@@ -271,16 +271,56 @@ void CRT(mpz_t c,
      mpz_init(m_q);
 
      sliding_window_exponentiation(m_p, c, d_p, p);
-
      sliding_window_exponentiation(m_q, c, d_q, q);
 
-     montgomery(m_p, m_p, q, N);
+     /** MONTGOMERY */
 
-     montgomery(m_p, m_p, i_q, N);
+     // Calculate BASE value
+     // BASE = 2^64
+     mpz_t BASE;
+     mpz_init_set_ui(BASE, 2);
+     mpz_pow_ui(BASE, BASE, W);
 
-     montgomery(m_q, m_q, p, N);
+     // Montgomery parameters
+     mpz_t Mp;
+     mpz_t Mw;
+     mpz_t Mp_sq;
 
-     montgomery(m_q, m_q, i_p, N);
+     mpz_t one;
+     mpz_init_set_ui(one, 1);
+
+     // Compute Montgomery parameters.
+     montgomery_Mp(Mp, N, BASE);
+     montgomery_Mw(Mw, N, BASE);
+     montgomery_Mp_sq(Mp_sq, N);
+
+     // Transform all variables in montgomery form.
+     // m_p, q, i_q, m_q, p, i_p
+
+     montgomery_multiplication(m_p, m_p,    Mp_sq, BASE, N, Mw);
+     montgomery_multiplication(q,   q,      Mp_sq, BASE, N, Mw);
+     montgomery_multiplication(i_q, i_q,    Mp_sq, BASE, N, Mw);
+     montgomery_multiplication(m_q, m_q,    Mp_sq, BASE, N, Mw);
+     montgomery_multiplication(p,   p,      Mp_sq, BASE, N, Mw);
+     montgomery_multiplication(i_p, i_p,    Mp_sq, BASE, N, Mw);
+
+     // Do the modular multiplications
+     montgomery_multiplication(m_p, m_p, q, BASE, N, Mw);
+     montgomery_multiplication(m_p, m_p, i_q, BASE, N, Mw);
+     montgomery_multiplication(m_q, m_q, p, BASE, N, Mw);
+     montgomery_multiplication(m_q, m_q, i_p, BASE, N, Mw);
+
+     // Convert to normal form
+     // m_p, m_q
+     montgomery_multiplication(m_p, m_p, one, BASE, N, Mw);
+     montgomery_multiplication(m_q, m_q, one, BASE, N, Mw);
+
+     mpz_clear(Mp);
+     mpz_clear(Mw);
+     mpz_clear(Mp_sq);
+     mpz_clear(one);
+     mpz_clear(BASE);
+     /** END MONTGOMERY */
 
      mpz_add(m, m_p, m_q);
      mpz_mod(m, m, N);
